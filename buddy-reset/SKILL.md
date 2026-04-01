@@ -1,7 +1,7 @@
 ---
 name: buddy-reset
 description: "Reset Claude Code buddy/companion by changing the season seed (fk_) in cli.js and removing the companion field from ~/.claude.json, allowing re-hatching a new buddy. Triggers: buddy reset, reroll buddy, new buddy, change buddy, reset companion, reroll companion, buddy reroll"
-allowed-tools: Bash(*), Read, AskUserQuestion
+allowed-tools: Bash(*)
 ---
 
 # Buddy Reset
@@ -11,7 +11,7 @@ Reset your Claude Code coding buddy so you can hatch a new one.
 ## What This Skill Does
 
 1. Reads the current season seed (`fk_`) from `cli.js`
-2. Asks you what new season string to use
+2. Generates a random new seed automatically
 3. Replaces the seed in `cli.js`
 4. Removes the `companion` field from `~/.claude.json`
 5. Reminds you to restart and run `/buddy`
@@ -34,22 +34,22 @@ grep -o 'fk_="[^"]*"' "$HOME/AppData/Roaming/npm/node_modules/@anthropic-ai/clau
 
 Show the user the current seed value.
 
-### Step 2: Ask the user for a new seed
+### Step 2: Generate a random seed and replace in cli.js
 
-Use AskUserQuestion to ask the user what new season seed they want. Provide these options:
-- Random (generate a random string like `"friend-YYYY-MMDD"` using the current date)
-- Custom (let the user type their own)
+Generate a random seed string using the format `buddy-YYYYMMDD-XXXXXX` where `YYYYMMDD` is the current date and `XXXXXX` is a random 6-character alphanumeric string. Use Bash:
+```bash
+NEW_SEED="buddy-$(date +%Y%m%d)-$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 6)"
+echo "$NEW_SEED"
+```
 
-### Step 3: Replace the seed in cli.js
-
-Use `sed` to replace the old seed with the new one in `cli.js`:
+Then use `sed` to replace the old seed with the new one in `cli.js`:
 ```bash
 sed -i "s/fk_=\"OLD_VALUE\"/fk_=\"NEW_VALUE\"/" "$HOME/AppData/Roaming/npm/node_modules/@anthropic-ai/claude-code/cli.js"
 ```
 
 Verify the replacement succeeded by grepping again.
 
-### Step 4: Remove companion from ~/.claude.json
+### Step 3: Remove companion from ~/.claude.json
 
 Use python to remove the `companion` field:
 ```bash
@@ -83,7 +83,7 @@ with open(path, 'w', encoding='utf-8') as f:
 "
 ```
 
-### Step 5: Notify the user
+### Step 4: Notify the user
 
 Tell the user:
 - The season seed has been changed from `OLD` to `NEW`
